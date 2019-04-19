@@ -1390,7 +1390,7 @@ impl Stretch {
                         + (child.position.cross_start(dir).or_else(0.0)
                             - child.position.cross_end(dir).or_else(0.0));
 
-                    children.push(result::Layout {
+                    *self.layout.get_mut(&child.node).unwrap() = result::Layout {
                         order: self.children[&node]
                             .iter()
                             .position(|n| *n == child.node)
@@ -1400,7 +1400,7 @@ impl Stretch {
                             x: if is_row { offset_main } else { offset_cross },
                             y: if is_column { offset_main } else { offset_cross },
                         },
-                    });
+                    };
 
                     total_offset_main +=
                         child.offset_main + child.margin.main(dir) + result.size.main(dir);
