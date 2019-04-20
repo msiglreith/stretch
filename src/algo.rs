@@ -109,10 +109,7 @@ impl Stretch {
 
         *self.layout.get_mut(&root).unwrap() = result::Layout {
             order: 0,
-            size: Size {
-                width: result.size.width,
-                height: result.size.height,
-            },
+            size: Size { width: result.size.width, height: result.size.height },
             location: Point { x: 0.0, y: 0.0 },
         };
 
@@ -182,15 +179,9 @@ impl Stretch {
         let is_column = dir.is_column();
         let is_wrap_reverse = self.style[&node].flex_wrap == FlexWrap::WrapReverse;
 
-        let margin = self.style[&node]
-            .margin
-            .map(|n| n.resolve(parent_size.width).or_else(0.0));
-        let padding = self.style[&node]
-            .padding
-            .map(|n| n.resolve(parent_size.width).or_else(0.0));
-        let border = self.style[&node]
-            .border
-            .map(|n| n.resolve(parent_size.width).or_else(0.0));
+        let margin = self.style[&node].margin.map(|n| n.resolve(parent_size.width).or_else(0.0));
+        let padding = self.style[&node].padding.map(|n| n.resolve(parent_size.width).or_else(0.0));
+        let border = self.style[&node].border.map(|n| n.resolve(parent_size.width).or_else(0.0));
 
         let padding_border = Rect {
             start: padding.start + border.start,
@@ -204,33 +195,19 @@ impl Stretch {
             height: node_size.height - padding_border.vertical(),
         };
 
-        let mut container_size = Size {
-            width: 0.0,
-            height: 0.0,
-        };
-        let mut inner_container_size = Size {
-            width: 0.0,
-            height: 0.0,
-        };
+        let mut container_size = Size { width: 0.0, height: 0.0 };
+        let mut inner_container_size = Size { width: 0.0, height: 0.0 };
 
         // If this is a leaf node we can skip a lot of this function in some cases
         if self.children[&node].is_empty() {
             if node_size.width.is_defined() && node_size.height.is_defined() {
-                return Ok(ComputeResult {
-                    size: node_size.map(|s| s.or_else(0.0)),
-                });
+                return Ok(ComputeResult { size: node_size.map(|s| s.or_else(0.0)) });
             }
 
             if let Some(ref measure) = self.measure[&node] {
-                let result = ComputeResult {
-                    size: measure(node_size)?,
-                };
-                *self.layout_cache.get_mut(&node).unwrap() = Some(result::Cache {
-                    node_size,
-                    parent_size,
-                    perform_layout,
-                    result,
-                });
+                let result = ComputeResult { size: measure(node_size)? };
+                *self.layout_cache.get_mut(&node).unwrap() =
+                    Some(result::Cache { node_size, parent_size, perform_layout, result });
                 return Ok(result);
             }
 
@@ -255,14 +232,8 @@ impl Stretch {
         //    in that dimension and use that value. This might result in an infinite value.
 
         let available_space = Size {
-            width: node_size
-                .width
-                .or_else(parent_size.width - margin.horizontal())
-                - padding_border.horizontal(),
-            height: node_size
-                .height
-                .or_else(parent_size.height - margin.vertical())
-                - padding_border.vertical(),
+            width: node_size.width.or_else(parent_size.width - margin.horizontal()) - padding_border.horizontal(),
+            height: node_size.height.or_else(parent_size.height - margin.vertical()) - padding_border.vertical(),
         };
 
         let mut flex_items: Vec<FlexItem> = self.children[&node]
@@ -274,68 +245,33 @@ impl Stretch {
 
                 size: Size {
                     width: self.style[child].size.width.resolve(node_inner_size.width),
-                    height: self.style[child]
-                        .size
-                        .height
-                        .resolve(node_inner_size.height),
+                    height: self.style[child].size.height.resolve(node_inner_size.height),
                 },
 
                 min_size: Size {
-                    width: self.style[child]
-                        .min_size
-                        .width
-                        .resolve(node_inner_size.width),
-                    height: self.style[child]
-                        .min_size
-                        .height
-                        .resolve(node_inner_size.height),
+                    width: self.style[child].min_size.width.resolve(node_inner_size.width),
+                    height: self.style[child].min_size.height.resolve(node_inner_size.height),
                 },
 
                 max_size: Size {
-                    width: self.style[child]
-                        .max_size
-                        .width
-                        .resolve(node_inner_size.width),
-                    height: self.style[child]
-                        .max_size
-                        .height
-                        .resolve(node_inner_size.height),
+                    width: self.style[child].max_size.width.resolve(node_inner_size.width),
+                    height: self.style[child].max_size.height.resolve(node_inner_size.height),
                 },
 
-                position: self.style[child]
-                    .position
-                    .map(|p| p.resolve(node_inner_size.width)),
-                margin: self.style[child]
-                    .margin
-                    .map(|m| m.resolve(node_inner_size.width).or_else(0.0)),
-                padding: self.style[child]
-                    .padding
-                    .map(|p| p.resolve(node_inner_size.width).or_else(0.0)),
-                border: self.style[child]
-                    .border
-                    .map(|b| b.resolve(node_inner_size.width).or_else(0.0)),
+                position: self.style[child].position.map(|p| p.resolve(node_inner_size.width)),
+                margin: self.style[child].margin.map(|m| m.resolve(node_inner_size.width).or_else(0.0)),
+                padding: self.style[child].padding.map(|p| p.resolve(node_inner_size.width).or_else(0.0)),
+                border: self.style[child].border.map(|b| b.resolve(node_inner_size.width).or_else(0.0)),
 
                 flex_basis: 0.0,
                 inner_flex_basis: 0.0,
                 violation: 0.0,
                 frozen: false,
 
-                hypothetical_inner_size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
-                hypothetical_outer_size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
-                target_size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
-                outer_target_size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
+                hypothetical_inner_size: Size { width: 0.0, height: 0.0 },
+                hypothetical_outer_size: Size { width: 0.0, height: 0.0 },
+                target_size: Size { width: 0.0, height: 0.0 },
+                outer_target_size: Size { width: 0.0, height: 0.0 },
 
                 baseline: 0.0,
 
@@ -353,9 +289,7 @@ impl Stretch {
         flex_items.iter_mut().try_for_each(|child| -> Result<()> {
             // A. If the item has a definite used flex basis, that’s the flex base size.
 
-            let flex_basis = self.style[&child.node]
-                .flex_basis
-                .resolve(node_inner_size.main(dir));
+            let flex_basis = self.style[&child.node].flex_basis.resolve(node_inner_size.main(dir));
             if flex_basis.is_defined() {
                 child.flex_basis = flex_basis.or_else(0.0);
                 return Ok(());
@@ -420,12 +354,8 @@ impl Stretch {
                 .compute_internal(
                     child.node,
                     Size {
-                        width: width
-                            .maybe_max(child.min_size.width)
-                            .maybe_min(child.max_size.width),
-                        height: height
-                            .maybe_max(child.min_size.height)
-                            .maybe_min(child.max_size.height),
+                        width: width.maybe_max(child.min_size.width).maybe_min(child.max_size.width),
+                        height: height.maybe_max(child.min_size.height).maybe_min(child.max_size.height),
                     },
                     available_space,
                     false,
@@ -442,41 +372,27 @@ impl Stretch {
         // used min and max main sizes (and flooring the content box size at zero).
 
         flex_items.iter_mut().try_for_each(|child| -> Result<()> {
-            child.inner_flex_basis =
-                child.flex_basis - child.padding.main(dir) - child.border.main(dir);
+            child.inner_flex_basis = child.flex_basis - child.padding.main(dir) - child.border.main(dir);
 
             // TODO - not really spec abiding but needs to be done somewhere. probably somewhere else though.
             // The following logic was developed not from the spec but by trail and error looking into how
             // webkit handled various scenarios. Can probably be solved better by passing in
             // min-content max-content constraints from the top
             let min_main = self
-                .compute_internal(
-                    child.node,
-                    Size {
-                        width: Undefined,
-                        height: Undefined,
-                    },
-                    available_space,
-                    false,
-                )?
+                .compute_internal(child.node, Size { width: Undefined, height: Undefined }, available_space, false)?
                 .size
                 .main(dir)
                 .maybe_max(child.min_size.main(dir))
                 .maybe_min(child.size.main(dir))
                 .to_number();
 
-            child.hypothetical_inner_size.set_main(
-                dir,
-                child
-                    .flex_basis
-                    .maybe_max(min_main)
-                    .maybe_min(child.max_size.main(dir)),
-            );
+            child
+                .hypothetical_inner_size
+                .set_main(dir, child.flex_basis.maybe_max(min_main).maybe_min(child.max_size.main(dir)));
 
-            child.hypothetical_outer_size.set_main(
-                dir,
-                child.hypothetical_inner_size.main(dir) + child.margin.main(dir),
-            );
+            child
+                .hypothetical_outer_size
+                .set_main(dir, child.hypothetical_inner_size.main(dir) + child.margin.main(dir));
 
             Ok(())
         })?;
@@ -503,17 +419,9 @@ impl Stretch {
             let mut line_length = 0.0;
 
             if self.style[&node].flex_wrap == FlexWrap::NoWrap {
-                lines.push(FlexLine {
-                    items: flex_items,
-                    cross_size: 0.0,
-                    offset_cross: 0.0,
-                });
+                lines.push(FlexLine { items: flex_items, cross_size: 0.0, offset_cross: 0.0 });
             } else {
-                let mut line = FlexLine {
-                    items: vec![],
-                    cross_size: 0.0,
-                    offset_cross: 0.0,
-                };
+                let mut line = FlexLine { items: vec![], cross_size: 0.0, offset_cross: 0.0 };
 
                 for child in flex_items {
                     line_length += child.hypothetical_outer_size.main(dir);
@@ -522,11 +430,7 @@ impl Stretch {
                         if line_length > main && !line.items.is_empty() {
                             line_length = child.hypothetical_outer_size.main(dir);
                             lines.push(line);
-                            line = FlexLine {
-                                items: vec![],
-                                cross_size: 0.0,
-                                offset_cross: 0.0,
-                            };
+                            line = FlexLine { items: vec![], cross_size: 0.0, offset_cross: 0.0 };
                         }
                     }
 
@@ -550,11 +454,7 @@ impl Stretch {
             //    use the flex grow factor for the rest of this algorithm; otherwise, use the
             //    flex shrink factor.
 
-            let used_flex_factor: f32 = line
-                .items
-                .iter()
-                .map(|child| child.hypothetical_outer_size.main(dir))
-                .sum();
+            let used_flex_factor: f32 = line.items.iter().map(|child| child.hypothetical_outer_size.main(dir)).sum();
             let growing = used_flex_factor < node_inner_size.main(dir).or_else(0.0);
             let shrinking = !growing;
 
@@ -574,11 +474,7 @@ impl Stretch {
                         self.compute_internal(
                             child.node,
                             Size {
-                                width: child
-                                    .size
-                                    .width
-                                    .maybe_max(child.min_size.width)
-                                    .maybe_min(child.max_size.width),
+                                width: child.size.width.maybe_max(child.min_size.width).maybe_min(child.max_size.width),
                                 height: child
                                     .size
                                     .height
@@ -594,20 +490,15 @@ impl Stretch {
                         .maybe_min(child.max_size.main(dir)),
                     );
                 } else {
-                    child
-                        .target_size
-                        .set_main(dir, child.hypothetical_inner_size.main(dir));
+                    child.target_size.set_main(dir, child.hypothetical_inner_size.main(dir));
                 }
 
                 // TODO this should really only be set inside the if-statement below but
                 // that causes the target_main_size to never be set for some items
 
-                child
-                    .outer_target_size
-                    .set_main(dir, child.target_size.main(dir) + child.margin.main(dir));
+                child.outer_target_size.set_main(dir, child.target_size.main(dir) + child.margin.main(dir));
 
-                if (self.style[&child.node].flex_grow == 0.0
-                    && self.style[&child.node].flex_shrink == 0.0)
+                if (self.style[&child.node].flex_grow == 0.0 && self.style[&child.node].flex_shrink == 0.0)
                     || (growing && child.flex_basis > child.hypothetical_inner_size.main(dir))
                     || (shrinking && child.flex_basis < child.hypothetical_inner_size.main(dir))
                 {
@@ -625,12 +516,7 @@ impl Stretch {
                 .items
                 .iter()
                 .map(|child| {
-                    child.margin.main(dir)
-                        + if child.frozen {
-                            child.target_size.main(dir)
-                        } else {
-                            child.flex_basis
-                        }
+                    child.margin.main(dir) + if child.frozen { child.target_size.main(dir) } else { child.flex_basis }
                 })
                 .sum();
 
@@ -666,29 +552,17 @@ impl Stretch {
                 let used_space: f32 = Iterator::chain(frozen.iter(), unfrozen.iter())
                     .map(|child| {
                         child.margin.main(dir)
-                            + if child.frozen {
-                                child.target_size.main(dir)
-                            } else {
-                                child.flex_basis
-                            }
+                            + if child.frozen { child.target_size.main(dir) } else { child.flex_basis }
                     })
                     .sum();
 
-                let sum_flex_grow: f32 = unfrozen
-                    .iter()
-                    .map(|item| self.style[&item.node].flex_grow)
-                    .sum();
-                let sum_flex_shrink: f32 = unfrozen
-                    .iter()
-                    .map(|item| self.style[&item.node].flex_shrink)
-                    .sum();
+                let sum_flex_grow: f32 = unfrozen.iter().map(|item| self.style[&item.node].flex_grow).sum();
+                let sum_flex_shrink: f32 = unfrozen.iter().map(|item| self.style[&item.node].flex_shrink).sum();
 
                 let free_space = if growing && sum_flex_grow < 1.0 {
-                    (initial_free_space * sum_flex_grow)
-                        .maybe_min(node_inner_size.main(dir) - used_space)
+                    (initial_free_space * sum_flex_grow).maybe_min(node_inner_size.main(dir) - used_space)
                 } else if shrinking && sum_flex_shrink < 1.0 {
-                    (initial_free_space * sum_flex_shrink)
-                        .maybe_max(node_inner_size.main(dir) - used_space)
+                    (initial_free_space * sum_flex_shrink).maybe_max(node_inner_size.main(dir) - used_space)
                 } else {
                     (node_inner_size.main(dir) - used_space).or_else(0.0)
                 };
@@ -717,28 +591,21 @@ impl Stretch {
                         unfrozen.iter_mut().for_each(|child| {
                             child.target_size.set_main(
                                 dir,
-                                child.flex_basis
-                                    + free_space
-                                        * (self.style[&child.node].flex_grow / sum_flex_grow),
+                                child.flex_basis + free_space * (self.style[&child.node].flex_grow / sum_flex_grow),
                             );
                         });
                     } else if shrinking && sum_flex_shrink > 0.0 {
                         let sum_scaled_shrink_factor: f32 = unfrozen
                             .iter()
-                            .map(|child| {
-                                child.inner_flex_basis * self.style[&child.node].flex_shrink
-                            })
+                            .map(|child| child.inner_flex_basis * self.style[&child.node].flex_shrink)
                             .sum();
 
                         if sum_scaled_shrink_factor > 0.0 {
                             unfrozen.iter_mut().for_each(|child| {
-                                let scaled_shrink_factor =
-                                    child.inner_flex_basis * self.style[&child.node].flex_shrink;
+                                let scaled_shrink_factor = child.inner_flex_basis * self.style[&child.node].flex_shrink;
                                 child.target_size.set_main(
                                     dir,
-                                    child.flex_basis
-                                        + free_space
-                                            * (scaled_shrink_factor / sum_scaled_shrink_factor),
+                                    child.flex_basis + free_space * (scaled_shrink_factor / sum_scaled_shrink_factor),
                                 )
                             });
                         }
@@ -750,50 +617,36 @@ impl Stretch {
                 //    item’s target main size was made smaller by this, it’s a max violation.
                 //    If the item’s target main size was made larger by this, it’s a min violation.
 
-                let total_violation =
-                    unfrozen
-                        .iter_mut()
-                        .try_fold(0.0, |acc, child| -> Result<f32> {
-                            // TODO - not really spec abiding but needs to be done somewhere. probably somewhere else though.
-                            // The following logic was developed not from the spec but by trail and error looking into how
-                            // webkit handled various scenarios. Can probably be solved better by passing in
-                            // min-content max-content constraints from the top. Need to figure out correct thing to do here as
-                            // just piling on more conditionals.
-                            let min_main = if is_row && self.measure[&child.node].is_none() {
-                                self.compute_internal(
-                                    child.node,
-                                    Size {
-                                        width: Undefined,
-                                        height: Undefined,
-                                    },
-                                    available_space,
-                                    false,
-                                )?
-                                .size
-                                .width
-                                .maybe_min(child.size.width)
-                                .maybe_max(child.min_size.width)
-                                .to_number()
-                            } else {
-                                child.min_size.main(dir)
-                            };
+                let total_violation = unfrozen.iter_mut().try_fold(0.0, |acc, child| -> Result<f32> {
+                    // TODO - not really spec abiding but needs to be done somewhere. probably somewhere else though.
+                    // The following logic was developed not from the spec but by trail and error looking into how
+                    // webkit handled various scenarios. Can probably be solved better by passing in
+                    // min-content max-content constraints from the top. Need to figure out correct thing to do here as
+                    // just piling on more conditionals.
+                    let min_main = if is_row && self.measure[&child.node].is_none() {
+                        self.compute_internal(
+                            child.node,
+                            Size { width: Undefined, height: Undefined },
+                            available_space,
+                            false,
+                        )?
+                        .size
+                        .width
+                        .maybe_min(child.size.width)
+                        .maybe_max(child.min_size.width)
+                        .to_number()
+                    } else {
+                        child.min_size.main(dir)
+                    };
 
-                            let max_main = child.max_size.main(dir);
-                            let clamped = child
-                                .target_size
-                                .main(dir)
-                                .maybe_min(max_main)
-                                .maybe_max(min_main)
-                                .max(0.0);
-                            child.violation = clamped - child.target_size.main(dir);
-                            child.target_size.set_main(dir, clamped);
-                            child.outer_target_size.set_main(
-                                dir,
-                                child.target_size.main(dir) + child.margin.main(dir),
-                            );
+                    let max_main = child.max_size.main(dir);
+                    let clamped = child.target_size.main(dir).maybe_min(max_main).maybe_max(min_main).max(0.0);
+                    child.violation = clamped - child.target_size.main(dir);
+                    child.target_size.set_main(dir, clamped);
+                    child.outer_target_size.set_main(dir, child.target_size.main(dir) + child.margin.main(dir));
 
-                            Ok(acc + child.violation)
-                        })?;
+                    Ok(acc + child.violation)
+                })?;
 
                 // e. Freeze over-flexed items. The total violation is the sum of the adjustments
                 //    from the previous step ∑(clamped size - unclamped size). If the total violation is:
@@ -821,11 +674,7 @@ impl Stretch {
             dir,
             node_size.main(dir).or_else({
                 let longest_line = flex_lines.iter().fold(f32::MIN, |acc, line| {
-                    let length: f32 = line
-                        .items
-                        .iter()
-                        .map(|item| item.outer_target_size.main(dir))
-                        .sum();
+                    let length: f32 = line.items.iter().map(|item| item.outer_target_size.main(dir)).sum();
                     acc.max(length)
                 });
 
@@ -846,39 +695,20 @@ impl Stretch {
 
         flex_lines.iter_mut().try_for_each(|line| {
             line.items.iter_mut().try_for_each(|child| -> Result<()> {
-                let child_cross = child
-                    .size
-                    .cross(dir)
-                    .maybe_max(child.min_size.cross(dir))
-                    .maybe_min(child.max_size.cross(dir));
+                let child_cross =
+                    child.size.cross(dir).maybe_max(child.min_size.cross(dir)).maybe_min(child.max_size.cross(dir));
 
                 child.hypothetical_inner_size.set_cross(
                     dir,
                     self.compute_internal(
                         child.node,
                         Size {
-                            width: if is_row {
-                                child.target_size.width.to_number()
-                            } else {
-                                child_cross
-                            },
-                            height: if is_row {
-                                child_cross
-                            } else {
-                                child.target_size.height.to_number()
-                            },
+                            width: if is_row { child.target_size.width.to_number() } else { child_cross },
+                            height: if is_row { child_cross } else { child.target_size.height.to_number() },
                         },
                         Size {
-                            width: if is_row {
-                                container_size.main(dir).to_number()
-                            } else {
-                                available_space.width
-                            },
-                            height: if is_row {
-                                available_space.height
-                            } else {
-                                container_size.main(dir).to_number()
-                            },
+                            width: if is_row { container_size.main(dir).to_number() } else { available_space.width },
+                            height: if is_row { available_space.height } else { container_size.main(dir).to_number() },
                         },
                         false,
                     )?
@@ -888,10 +718,9 @@ impl Stretch {
                     .maybe_min(child.max_size.cross(dir)),
                 );
 
-                child.hypothetical_outer_size.set_cross(
-                    dir,
-                    child.hypothetical_inner_size.cross(dir) + child.margin.cross(dir),
-                );
+                child
+                    .hypothetical_outer_size
+                    .set_cross(dir, child.hypothetical_inner_size.cross(dir) + child.margin.cross(dir));
 
                 Ok(())
             })
@@ -927,16 +756,8 @@ impl Stretch {
                             },
                         },
                         Size {
-                            width: if is_row {
-                                container_size.width.to_number()
-                            } else {
-                                node_size.width
-                            },
-                            height: if is_row {
-                                node_size.height
-                            } else {
-                                container_size.height.to_number()
-                            },
+                            width: if is_row { container_size.width.to_number() } else { node_size.width },
+                            height: if is_row { node_size.height } else { container_size.height.to_number() },
                         },
                         true,
                     )?;
@@ -945,10 +766,7 @@ impl Stretch {
                         self,
                         node,
                         &result::Layout {
-                            order: self.children[&node]
-                                .iter()
-                                .position(|n| *n == child.node)
-                                .unwrap() as u32,
+                            order: self.children[&node].iter().position(|n| *n == child.node).unwrap() as u32,
                             size: result.size,
                             location: Point { x: 0.0, y: 0.0 },
                         },
@@ -968,8 +786,7 @@ impl Stretch {
         //    of min/max-width/height applied more generally, this behavior would fall out automatically.
 
         if flex_lines.len() == 1 && node_size.cross(dir).is_defined() {
-            flex_lines[0].cross_size =
-                (node_size.cross(dir) - padding_border.cross(dir)).or_else(0.0);
+            flex_lines[0].cross_size = (node_size.cross(dir) - padding_border.cross(dir)).or_else(0.0);
         } else {
             flex_lines.iter_mut().for_each(|line| {
                 //    1. Collect all the flex items whose inline-axis is parallel to the main-axis, whose
@@ -984,17 +801,12 @@ impl Stretch {
                 //    3. The used cross-size of the flex line is the largest of the numbers found in the
                 //       previous two steps and zero.
 
-                let max_baseline: f32 = line
-                    .items
-                    .iter()
-                    .map(|child| child.baseline)
-                    .fold(0.0, |acc, x| acc.max(x));
+                let max_baseline: f32 = line.items.iter().map(|child| child.baseline).fold(0.0, |acc, x| acc.max(x));
                 line.cross_size = line
                     .items
                     .iter()
                     .map(|child| {
-                        if self.style[&child.node].align_self(&self.style[&node])
-                            == AlignSelf::Baseline
+                        if self.style[&child.node].align_self(&self.style[&node]) == AlignSelf::Baseline
                             && self.style[&child.node].cross_margin_start(dir) != Dimension::Auto
                             && self.style[&child.node].cross_margin_end(dir) != Dimension::Auto
                             && self.style[&child.node].cross_size(dir) == Dimension::Auto
@@ -1014,18 +826,14 @@ impl Stretch {
         //    by equal amounts such that the sum of their cross sizes exactly equals the
         //    flex container’s inner cross size.
 
-        if self.style[&node].align_content == AlignContent::Stretch
-            && node_size.cross(dir).is_defined()
-        {
+        if self.style[&node].align_content == AlignContent::Stretch && node_size.cross(dir).is_defined() {
             let total_cross: f32 = flex_lines.iter().map(|line| line.cross_size).sum();
             let inner_cross = (node_size.cross(dir) - padding_border.cross(dir)).or_else(0.0);
 
             if total_cross < inner_cross {
                 let remaining = inner_cross - total_cross;
                 let addition = remaining / flex_lines.len() as f32;
-                flex_lines
-                    .iter_mut()
-                    .for_each(|line| line.cross_size += addition);
+                flex_lines.iter_mut().for_each(|line| line.cross_size += addition);
             }
         }
 
@@ -1075,9 +883,7 @@ impl Stretch {
                     },
                 );
 
-                child
-                    .outer_target_size
-                    .set_cross(dir, child.target_size.cross(dir) + child.margin.cross(dir));
+                child.outer_target_size.set_cross(dir, child.target_size.cross(dir) + child.margin.cross(dir));
             });
         });
 
@@ -1090,11 +896,7 @@ impl Stretch {
         //     2. Align the items along the main-axis per justify-content.
 
         flex_lines.iter_mut().for_each(|line| {
-            let used_space: f32 = line
-                .items
-                .iter()
-                .map(|child| child.outer_target_size.main(dir))
-                .sum();
+            let used_space: f32 = line.items.iter().map(|child| child.outer_target_size.main(dir)).sum();
             let free_space = inner_container_size.main(dir) - used_space;
             let mut num_auto_margins = 0;
 
@@ -1174,11 +976,7 @@ impl Stretch {
                 };
 
                 if layout_reverse {
-                    line.items
-                        .iter_mut()
-                        .rev()
-                        .enumerate()
-                        .for_each(justify_item);
+                    line.items.iter_mut().rev().enumerate().for_each(justify_item);
                 } else {
                     line.items.iter_mut().enumerate().for_each(justify_item);
                 }
@@ -1197,11 +995,7 @@ impl Stretch {
 
         flex_lines.iter_mut().for_each(|line| {
             let line_cross_size = line.cross_size;
-            let max_baseline: f32 = line
-                .items
-                .iter_mut()
-                .map(|child| child.baseline)
-                .fold(0.0, |acc, x| acc.max(x));
+            let max_baseline: f32 = line.items.iter_mut().map(|child| child.baseline).fold(0.0, |acc, x| acc.max(x));
 
             line.items.iter_mut().for_each(|child| {
                 let free_space = line_cross_size - child.outer_target_size.cross(dir);
@@ -1232,45 +1026,44 @@ impl Stretch {
                     // 14. Align all flex items along the cross-axis per align-self, if neither of the item’s
                     //     cross-axis margins are auto.
 
-                    child.offset_cross =
-                        match self.style[&child.node].align_self(&self.style[&node]) {
-                            AlignSelf::Auto => 0.0, // Should never happen
-                            AlignSelf::FlexStart => {
+                    child.offset_cross = match self.style[&child.node].align_self(&self.style[&node]) {
+                        AlignSelf::Auto => 0.0, // Should never happen
+                        AlignSelf::FlexStart => {
+                            if is_wrap_reverse {
+                                free_space
+                            } else {
+                                0.0
+                            }
+                        }
+                        AlignSelf::FlexEnd => {
+                            if is_wrap_reverse {
+                                0.0
+                            } else {
+                                free_space
+                            }
+                        }
+                        AlignSelf::Center => free_space / 2.0,
+                        AlignSelf::Baseline => {
+                            if is_row {
+                                max_baseline - child.baseline
+                            } else {
+                                // baseline alignment only makes sense if the direction is row
+                                // we treat it as flex-start alignment in columns.
                                 if is_wrap_reverse {
                                     free_space
                                 } else {
                                     0.0
                                 }
                             }
-                            AlignSelf::FlexEnd => {
-                                if is_wrap_reverse {
-                                    0.0
-                                } else {
-                                    free_space
-                                }
+                        }
+                        AlignSelf::Stretch => {
+                            if is_wrap_reverse {
+                                free_space
+                            } else {
+                                0.0
                             }
-                            AlignSelf::Center => free_space / 2.0,
-                            AlignSelf::Baseline => {
-                                if is_row {
-                                    max_baseline - child.baseline
-                                } else {
-                                    // baseline alignment only makes sense if the direction is row
-                                    // we treat it as flex-start alignment in columns.
-                                    if is_wrap_reverse {
-                                        free_space
-                                    } else {
-                                        0.0
-                                    }
-                                }
-                            }
-                            AlignSelf::Stretch => {
-                                if is_wrap_reverse {
-                                    free_space
-                                } else {
-                                    0.0
-                                }
-                            }
-                        };
+                        }
+                    };
                 }
             });
         });
@@ -1282,26 +1075,15 @@ impl Stretch {
         //       min and max cross sizes of the flex container.
 
         let total_cross_size: f32 = flex_lines.iter().map(|line| line.cross_size).sum();
-        container_size.set_cross(
-            dir,
-            node_size
-                .cross(dir)
-                .or_else(total_cross_size + padding_border.cross(dir)),
-        );
+        container_size.set_cross(dir, node_size.cross(dir).or_else(total_cross_size + padding_border.cross(dir)));
         inner_container_size.set_cross(dir, container_size.cross(dir) - padding_border.cross(dir));
 
         // We have the container size. If our caller does not care about performing
         // layout we are done now.
         if !perform_layout {
-            let result = ComputeResult {
-                size: container_size,
-            };
-            *self.layout_cache.get_mut(&node).unwrap() = Some(result::Cache {
-                node_size,
-                parent_size,
-                perform_layout,
-                result: result.clone(),
-            });
+            let result = ComputeResult { size: container_size };
+            *self.layout_cache.get_mut(&node).unwrap() =
+                Some(result::Cache { node_size, parent_size, perform_layout, result: result.clone() });
             return Ok(result);
         }
 
@@ -1380,21 +1162,16 @@ impl Stretch {
                     let offset_main = total_offset_main
                         + child.offset_main
                         + child.margin.main_start(dir)
-                        + (child.position.main_start(dir).or_else(0.0)
-                            - child.position.main_end(dir).or_else(0.0));
+                        + (child.position.main_start(dir).or_else(0.0) - child.position.main_end(dir).or_else(0.0));
 
                     let offset_cross = total_offset_cross
                         + child.offset_cross
                         + line_offset_cross
                         + child.margin.cross_start(dir)
-                        + (child.position.cross_start(dir).or_else(0.0)
-                            - child.position.cross_end(dir).or_else(0.0));
+                        + (child.position.cross_start(dir).or_else(0.0) - child.position.cross_end(dir).or_else(0.0));
 
                     *self.layout.get_mut(&child.node).unwrap() = result::Layout {
-                        order: self.children[&node]
-                            .iter()
-                            .position(|n| *n == child.node)
-                            .unwrap() as u32,
+                        order: self.children[&node].iter().position(|n| *n == child.node).unwrap() as u32,
                         size: result.size,
                         location: Point {
                             x: if is_row { offset_main } else { offset_cross },
@@ -1402,8 +1179,7 @@ impl Stretch {
                         },
                     };
 
-                    total_offset_main +=
-                        child.offset_main + child.margin.main(dir) + result.size.main(dir);
+                    total_offset_main += child.offset_main + child.margin.main(dir) + result.size.main(dir);
 
                     Ok(())
                 };
@@ -1485,10 +1261,7 @@ impl Stretch {
                 let result = self.compute_internal(
                     child,
                     Size { width, height },
-                    Size {
-                        width: container_width,
-                        height: container_height,
-                    },
+                    Size { width: container_width, height: container_height },
                     true,
                 )?;
 
@@ -1496,31 +1269,15 @@ impl Stretch {
                     - result
                         .size
                         .main(dir)
-                        .maybe_max(
-                            self.style[&child]
-                                .min_main_size(dir)
-                                .resolve(node_inner_size.main(dir)),
-                        )
-                        .maybe_min(
-                            self.style[&child]
-                                .max_main_size(dir)
-                                .resolve(node_inner_size.main(dir)),
-                        );
+                        .maybe_max(self.style[&child].min_main_size(dir).resolve(node_inner_size.main(dir)))
+                        .maybe_min(self.style[&child].max_main_size(dir).resolve(node_inner_size.main(dir)));
 
                 let free_cross_space = container_size.cross(dir)
                     - result
                         .size
                         .cross(dir)
-                        .maybe_max(
-                            self.style[&child]
-                                .min_cross_size(dir)
-                                .resolve(node_inner_size.cross(dir)),
-                        )
-                        .maybe_min(
-                            self.style[&child]
-                                .max_cross_size(dir)
-                                .resolve(node_inner_size.cross(dir)),
-                        );
+                        .maybe_max(self.style[&child].min_cross_size(dir).resolve(node_inner_size.cross(dir)))
+                        .maybe_min(self.style[&child].max_cross_size(dir).resolve(node_inner_size.cross(dir)));
 
                 let offset_main = if start_main.is_defined() {
                     start_main.or_else(0.0) + border.main_start(dir)
@@ -1528,13 +1285,11 @@ impl Stretch {
                     free_main_space - end_main.or_else(0.0) - border.main_end(dir)
                 } else {
                     match self.style[&node].justify_content {
-                        JustifyContent::SpaceBetween | JustifyContent::FlexStart => {
-                            padding_border.main_start(dir)
-                        }
+                        JustifyContent::SpaceBetween | JustifyContent::FlexStart => padding_border.main_start(dir),
                         JustifyContent::FlexEnd => free_main_space - padding_border.main_end(dir),
-                        JustifyContent::SpaceEvenly
-                        | JustifyContent::SpaceAround
-                        | JustifyContent::Center => free_main_space / 2.0,
+                        JustifyContent::SpaceEvenly | JustifyContent::SpaceAround | JustifyContent::Center => {
+                            free_main_space / 2.0
+                        }
                     }
                 };
 
@@ -1588,14 +1343,8 @@ impl Stretch {
             node: NodeId,
             order: u32,
         ) {
-            *layout.get_mut(&node).unwrap() = result::Layout {
-                order,
-                size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
-                location: Point { x: 0.0, y: 0.0 },
-            };
+            *layout.get_mut(&node).unwrap() =
+                result::Layout { order, size: Size { width: 0.0, height: 0.0 }, location: Point { x: 0.0, y: 0.0 } };
 
             for (order, child) in children[&node].iter().enumerate() {
                 hidden_layout(layout, children, *child, order as _);
@@ -1608,15 +1357,9 @@ impl Stretch {
             }
         }
 
-        let result = ComputeResult {
-            size: container_size,
-        };
-        *self.layout_cache.get_mut(&node).unwrap() = Some(result::Cache {
-            node_size,
-            parent_size,
-            perform_layout,
-            result,
-        });
+        let result = ComputeResult { size: container_size };
+        *self.layout_cache.get_mut(&node).unwrap() =
+            Some(result::Cache { node_size, parent_size, perform_layout, result });
         Ok(result)
     }
 }

@@ -21,10 +21,7 @@ struct Allocator {
 
 impl Allocator {
     pub fn new() -> Self {
-        Allocator {
-            new_id: 0,
-            free_ids: Vec::new(),
-        }
+        Allocator { new_id: 0, free_ids: Vec::new() }
     }
 
     pub fn allocate(&mut self) -> NodeId {
@@ -212,12 +209,7 @@ impl Stretch {
             }
         }
 
-        mark_dirty_impl(
-            node,
-            &mut self.layout_cache,
-            &mut self.is_dirty,
-            &self.parents,
-        );
+        mark_dirty_impl(node, &mut self.layout_cache, &mut self.is_dirty, &self.parents);
     }
 
     pub fn dirty(&self, node: NodeId) -> bool {
