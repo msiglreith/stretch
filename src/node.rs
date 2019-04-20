@@ -1,7 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::{vec, vec::Vec};
 
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 use crate::geometry::Size;
 use crate::number::Number;
